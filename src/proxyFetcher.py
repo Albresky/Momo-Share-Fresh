@@ -59,9 +59,12 @@ class ProxyFetcher(object):
         for url in target_urls:
             tree = WebRequest().get(url).tree
             for tr in tree.xpath("//table[@class='active']//tr")[1:]:
-                ip = "".join(tr.xpath('./td[1]/text()')).strip()
-                port = "".join(tr.xpath('./td[2]/text()')).strip()
-                yield "%s:%s" % (ip, port)
+                protocol = "".join(tr.xpath('./td[4]/text()')).strip()
+                if protocol == "HTTP,HTTPS":
+                    ip = "".join(tr.xpath('./td[1]/text()')).strip()
+                    port = "".join(tr.xpath('./td[2]/text()')).strip()
+                    yield "%s:%s" % (ip, port)
+
 
     @staticmethod
     def freeProxy04():
@@ -111,9 +114,10 @@ class ProxyFetcher(object):
             resp_text = WebRequest().get(url).text
             for each in resp_text.split("\n"):
                 json_info = json.loads(each)
-                if json_info.get("country") == "CN":
-                    yield "%s:%s" % (json_info.get("host", ""), json_info.get("port", ""))
+                # if json_info.get("country") == "CN":
+                yield "%s:%s" % (json_info.get("host", ""), json_info.get("port", ""))
         except Exception as e:
+            pass
             print(e)
 
     @staticmethod
@@ -150,9 +154,12 @@ class ProxyFetcher(object):
     @staticmethod
     def freeProxy10():
         """ 89免费代理 """
-        r = WebRequest().get("https://www.89ip.cn/index_1.html", timeout=10)
-        proxies = re.findall(
-            r'<td.*?>[\s\S]*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})[\s\S]*?</td>[\s\S]*?<td.*?>[\s\S]*?(\d+)[\s\S]*?</td>',
-            r.text)
-        for proxy in proxies:
-            yield ':'.join(proxy)
+
+        for i in range(21)[1:]:
+            url='http://www.89ip.cn/index_{}.html'.format(i)
+            r = WebRequest().get(url, timeout=10)
+            proxies = re.findall(r'<td.*?>[\s\S]*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})[\s\S]*?</td>[\s\S]*?<td.*?>[\s\S]*?(\d+)[\s\S]*?</td>',r.text)
+            if len(proxies)==0:
+                continue
+            for proxy in proxies:
+                yield ':'.join(proxy)
